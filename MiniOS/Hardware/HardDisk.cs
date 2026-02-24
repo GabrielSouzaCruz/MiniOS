@@ -1,17 +1,22 @@
-﻿using System.Collections.Generic;
-using MiniOS.Models;
+﻿using MiniOS.Models;
+using MiniOS.Models.FileSystem;
 
 namespace MiniOS.Hardware
 {
     public class HardDisk
     {
-        private readonly List<FileEntry> _files = new();
+        // O disco agora é gerido por uma Árvore B+ com capacidade de 3 elementos por nó (para forçar splits rápidos e testarmos)
+        private readonly BPlusTree _fileIndex = new BPlusTree(3);
 
         public void Save(FileEntry file)
         {
-            _files.Add(file);
+            _fileIndex.Insert(file);
         }
 
-        public IEnumerable<FileEntry> Files => _files;
+        // Método para ler um ficheiro rapidamente através da árvore
+        public FileEntry Read(string fileName)
+        {
+            return _fileIndex.Search(fileName);
+        }
     }
 }

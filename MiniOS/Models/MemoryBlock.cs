@@ -2,11 +2,13 @@
 {
     public class MemoryBlock
     {
+        public int Id { get; }
         public int Size { get; }
         public bool IsAllocated { get; private set; }
 
-        public MemoryBlock(int size)
+        public MemoryBlock(int id, int size)
         {
+            Id = id;
             Size = size;
         }
 

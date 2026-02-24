@@ -1,4 +1,5 @@
-﻿using MiniOS.Hardware;
+﻿using System;
+using MiniOS.Hardware;
 using MiniOS.Models;
 
 namespace MiniOS.Services
@@ -16,6 +17,23 @@ namespace MiniOS.Services
         {
             var file = new FileEntry(name, content);
             _disk.Save(file);
+        }
+
+        // Nova funcionalidade de leitura
+        public void ReadFile(string name)
+        {
+            var file = _disk.Read(name);
+
+            if (file != null)
+            {
+                Console.WriteLine($"\n[Sistema de Ficheiros] Ficheiro encontrado!");
+                Console.WriteLine($"Nome: {file.Name}");
+                Console.WriteLine($"Conteúdo: {file.Content}\n");
+            }
+            else
+            {
+                Console.WriteLine($"\n[Sistema de Ficheiros] Erro: O ficheiro '{name}' não existe no disco.\n");
+            }
         }
     }
 }

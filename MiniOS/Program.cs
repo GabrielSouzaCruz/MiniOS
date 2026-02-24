@@ -1,6 +1,7 @@
 ﻿using MiniOS.Controllers;
 using MiniOS.Hardware;
 using MiniOS.Services;
+using MiniOS.Services.Scheduling;
 using MiniOS.Views;
 
 class Program
@@ -13,7 +14,8 @@ class Program
         var disk = new HardDisk();
 
         // Services
-        var processManager = new ProcessManager(cpu);
+        var strategy = new SjfStrategy();
+        var processManager = new ProcessManager(cpu, strategy);
         var memoryManager = new MemoryManager(ram);
         var fileSystemManager = new FileSystemManager(disk);
 
