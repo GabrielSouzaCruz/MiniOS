@@ -1,4 +1,6 @@
 ﻿using MiniOS.Services;
+using System.Diagnostics;
+using MiniOS.Models;
 
 namespace MiniOS.Controllers
 {
@@ -19,6 +21,10 @@ namespace MiniOS.Controllers
         {
             _kernel.ProcessManager.ExecuteNextProcess();
         }
+        public IReadOnlyList<Models.Process> GetReadyQueue()
+        {
+            return _kernel.ProcessManager.GetReadyQueue();
+        }
 
         public void AllocateMemory(int size)
         {
@@ -33,6 +39,15 @@ namespace MiniOS.Controllers
         {
             _kernel.MemoryManager.ShowStatus();
         }
+        public int GetTotalMemory()
+        {
+            return _kernel.MemoryManager.GetTotalMemory();
+        }
+
+        public int GetUsedMemory()
+        {
+            return _kernel.MemoryManager.GetUsedMemory();
+        }
 
         public void CreateFile(string name, string content)
         {
@@ -41,6 +56,14 @@ namespace MiniOS.Controllers
         public void ReadFile(string name)
         {
             _kernel.FileSystemManager.ReadFile(name);
+        }
+        public System.Collections.Generic.IReadOnlyList<FileEntry> GetAllFiles()
+        {
+            return _kernel.FileSystemManager.GetAllFiles();
+        }
+        public int GetReadyQueueCount()
+        {
+            return _kernel.ProcessManager.GetReadyQueueCount();
         }
 
     }

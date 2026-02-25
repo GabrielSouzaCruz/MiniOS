@@ -1,42 +1,71 @@
-﻿using MiniOS.Models;
-using MiniOS.Hardware;
-using MiniOS.Services.Scheduling;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using MiniOS.Hardware;
+using MiniOS.Models;
+using MiniOS.Services.Scheduling;
 
 namespace MiniOS.Services
 {
     public class ProcessManager : IProcessManager
     {
         private readonly CPU _cpu;
-        private readonly ISchedulingStrategy _scheduler;
+        private readonly ISchedulingStrategy _strategy; // <--- A variável que estava a faltar!
         private readonly List<Process> _readyQueue = new();
-        private int _idCounter = 1;
+        private int _processCounter = 1;
 
-        // Injetamos a estratégia pelo construtor (Injeção de Dependência)
-        public ProcessManager(CPU cpu, ISchedulingStrategy scheduler)
+        // O construtor recebe a CPU e a Estratégia
+        public ProcessManager(CPU cpu, ISchedulingStrategy strategy)
         {
             _cpu = cpu;
-            _scheduler = scheduler;
+            _strategy = strategy;
         }
 
         public void CreateProcess(string name, int executionTime)
         {
-            var process = new Process(_idCounter++, name, executionTime);
+            var process = new Process(_processCounter++, name, executionTime);
             _readyQueue.Add(process);
-            Console.WriteLine($"[ProcessManager] Processo '{process.Name}' (Tempo: {process.ExecutionTime}) criado e a aguardar na fila.");
+            Console.WriteLine($"[Gestor de Processos] Processo {process.Name} (Tempo: {process.ExecutionTime}) criado e adicionado à fila.");
         }
+
+        public int GetReadyQueueCount()
+        {
+            return _readyQueue.Count;
+        }
+
+        public IReadOnlyList<Process> GetReadyQueue()
+        {
+            return _readyQueue.AsReadOnly();
+        }
+
         public void ExecuteNextProcess()
         {
-            var next = _scheduler.GetNextProcess(_readyQueue);
-
-            if (next != null)
+            if (_readyQueue.Count == 0)
             {
-                _cpu.Execute(next);
+                Console.WriteLine("[Escalonador] A fila está vazia.");
+                return;
             }
-            else
+
+            // Agora o C# já sabe quem é o _strategy!
+            var process = _strategy.GetNextProcess(_readyQueue);
+
+            if (process != null)
             {
-                Console.WriteLine("[Escalonador] Nenhum processo na fila de prontos.");
+                int quantum = 10; // O nosso "pedaço" de tempo
+
+                Console.WriteLine($"\n[CPU] A executar {process.Name} (Tempo atual: {process.ExecutionTime})...");
+
+                // Simula a execução na CPU descontando o quantum
+                process.ExecuteQuantum(quantum);
+
+                if (process.IsFinished)
+                {
+                    Console.WriteLine($"[CPU] O {process.Name} terminou a sua execução e saiu do sistema!");
+                }
+                else
+                {
+                    Console.WriteLine($"[CPU] Fim do Quantum. O {process.Name} ainda precisa de {process.ExecutionTime} de tempo. Volta para a fila!");
+                    _readyQueue.Add(process); // Volta para o fim da fila
+                }
             }
         }
     }

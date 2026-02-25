@@ -4,6 +4,8 @@
     {
         void Allocate(int size);
         void Free(int blockId); 
-        void ShowStatus();      
+        void ShowStatus();
+        int GetTotalMemory();
+        int GetUsedMemory();
     }
 }

@@ -35,5 +35,9 @@ namespace MiniOS.Services
                 Console.WriteLine($"\n[Sistema de Ficheiros] Erro: O ficheiro '{name}' não existe no disco.\n");
             }
         }
+        public System.Collections.Generic.IReadOnlyList<FileEntry> GetAllFiles()
+        {
+            return _disk.GetAllFiles().AsReadOnly();
+        }
     }
 }

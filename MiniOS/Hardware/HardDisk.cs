@@ -18,5 +18,9 @@ namespace MiniOS.Hardware
         {
             return _fileIndex.Search(fileName);
         }
+        public List<FileEntry> GetAllFiles()
+        {
+            return _fileIndex.GetAllFiles();
+        }
     }
 }

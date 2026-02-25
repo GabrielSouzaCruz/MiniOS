@@ -75,5 +75,14 @@ namespace MiniOS.Services
             }
             Console.WriteLine("=====================\n");
         }
+        public int GetTotalMemory()
+        {
+            return _ram.Capacity;
+        }
+
+        public int GetUsedMemory()
+        {
+            return _ram.GetUsedMemory();
+        }
     }
 }

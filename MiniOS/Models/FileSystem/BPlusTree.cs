@@ -22,17 +22,28 @@ namespace MiniOS.Models.FileSystem
         private FileEntry SearchInternal(BPlusNode node, string fileName)
         {
             int i = 0;
-            while (i < node.Keys.Count && string.Compare(fileName, node.Keys[i]) > 0)
-                i++;
 
             if (node.IsLeaf)
             {
+                // Nas folhas, queremos parar exatamente em cima da chave (ou logo a seguir)
+                while (i < node.Keys.Count && string.Compare(fileName, node.Keys[i]) > 0)
+                    i++;
+
+                // Verifica se encontrou a chave exata
                 if (i < node.Keys.Count && node.Keys[i] == fileName)
                     return node.Values[i];
-                return null;
-            }
 
-            return SearchInternal(node.Children[i], fileName);
+                return null; // Não encontrou
+            }
+            else
+            {
+                // Nos NÓS INTERNOS (índices), se a chave for MAIOR ou IGUAL, 
+                // temos de descer pelo filho da DIREITA! É aqui que estava o bug.
+                while (i < node.Keys.Count && string.Compare(fileName, node.Keys[i]) >= 0)
+                    i++;
+
+                return SearchInternal(node.Children[i], fileName);
+            }
         }
 
         // 1. Ponto de entrada da Inserção
@@ -128,6 +139,26 @@ namespace MiniOS.Models.FileSystem
             }
 
             Console.WriteLine("[B+ Tree] Split realizado com sucesso.");
+        }
+        public List<FileEntry> GetAllFiles()
+        {
+            var result = new List<FileEntry>();
+            var current = _root;
+
+            // 1. Desce até à folha mais à esquerda
+            while (!current.IsLeaf)
+            {
+                current = current.Children[0];
+            }
+
+            // 2. Caminha pelas folhas usando o ponteiro 'Next' recolhendo os ficheiros
+            while (current != null)
+            {
+                result.AddRange(current.Values);
+                current = current.Next;
+            }
+
+            return result;
         }
     }
 }
