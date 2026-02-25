@@ -15,19 +15,19 @@ namespace MiniOS.Services
             _ram = ram;
         }
 
-        public void Allocate(int size)
+        public int Allocate(int size)
         {
             if (size <= 0)
             {
                 Console.WriteLine("[Gestor de Memória] Erro: O tamanho deve ser maior que zero.");
-                return;
+                return -1; // <--- Faltava o -1 aqui!
             }
 
             // Verifica se há espaço suficiente (Prevenção de Out of Memory)
             if (size > _ram.GetFreeMemory())
             {
                 Console.WriteLine($"[Gestor de Memória] Erro (Out of Memory): Espaço insuficiente. Tentou alocar {size}MB, mas apenas {_ram.GetFreeMemory()}MB estão livres.");
-                return;
+                return -1; // <--- E faltava o -1 aqui também!
             }
 
             var block = new MemoryBlock(_idCounter++, size);
@@ -35,6 +35,7 @@ namespace MiniOS.Services
             _ram.AddBlock(block);
 
             Console.WriteLine($"[Gestor de Memória] Bloco {block.Id} alocado com sucesso ({size}MB).");
+            return block.Id;
         }
 
         public void Free(int blockId)

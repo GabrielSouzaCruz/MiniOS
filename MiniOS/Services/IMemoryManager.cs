@@ -2,7 +2,7 @@
 {
     public interface IMemoryManager
     {
-        void Allocate(int size);
+        int Allocate(int size);
         void Free(int blockId); 
         void ShowStatus();
         int GetTotalMemory();

@@ -20,11 +20,11 @@ namespace MiniOS.Services
             _strategy = strategy;
         }
 
-        public void CreateProcess(string name, int executionTime)
+        public void CreateProcess(string name, int executionTime, int memoryBlockId)
         {
-            var process = new Process(_processCounter++, name, executionTime);
+            var process = new Process(_processCounter++, name, executionTime, memoryBlockId);
             _readyQueue.Add(process);
-            Console.WriteLine($"[Gestor de Processos] Processo {process.Name} (Tempo: {process.ExecutionTime}) criado e adicionado à fila.");
+            Console.WriteLine($"[Gestor de Processos] Processo {process.Name} criado (Usando RAM ID: {memoryBlockId}).");
         }
 
         public int GetReadyQueueCount()
@@ -37,36 +37,28 @@ namespace MiniOS.Services
             return _readyQueue.AsReadOnly();
         }
 
-        public void ExecuteNextProcess()
+        public Process ExecuteNextProcess() // <--- Agora devolve um Process!
         {
-            if (_readyQueue.Count == 0)
-            {
-                Console.WriteLine("[Escalonador] A fila está vazia.");
-                return;
-            }
+            if (_readyQueue.Count == 0) return null;
 
-            // Agora o C# já sabe quem é o _strategy!
             var process = _strategy.GetNextProcess(_readyQueue);
 
             if (process != null)
             {
-                int quantum = 10; // O nosso "pedaço" de tempo
-
-                Console.WriteLine($"\n[CPU] A executar {process.Name} (Tempo atual: {process.ExecutionTime})...");
-
-                // Simula a execução na CPU descontando o quantum
+                int quantum = 10;
                 process.ExecuteQuantum(quantum);
 
                 if (process.IsFinished)
                 {
-                    Console.WriteLine($"[CPU] O {process.Name} terminou a sua execução e saiu do sistema!");
+                    Console.WriteLine($"[CPU] O {process.Name} terminou a sua execução!");
+                    return process; // <--- Devolve o processo que morreu para a RAM ser libertada!
                 }
                 else
                 {
-                    Console.WriteLine($"[CPU] Fim do Quantum. O {process.Name} ainda precisa de {process.ExecutionTime} de tempo. Volta para a fila!");
-                    _readyQueue.Add(process); // Volta para o fim da fila
+                    _readyQueue.Add(process);
                 }
             }
+            return null; // Ninguém morreu neste ciclo
         }
     }
 }

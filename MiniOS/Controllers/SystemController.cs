@@ -15,11 +15,31 @@ namespace MiniOS.Controllers
 
         public void CreateProcess(string name, int executionTime)
         {
-            _kernel.ProcessManager.CreateProcess(name, executionTime);
+            int ramNeeded = 50;
+
+            // CORRIGIDO: Agora chama "Allocate" em vez de "AllocateMemory"
+            int memId = _kernel.MemoryManager.Allocate(ramNeeded);
+
+            if (memId != -1)
+            {
+                _kernel.ProcessManager.CreateProcess(name, executionTime, memId);
+            }
+            else
+            {
+                Console.WriteLine($"[Sistema] BLOQUEADO: Sem memória RAM suficiente para o processo {name}!");
+            }
         }
+
         public void ExecuteNextProcess()
         {
-            _kernel.ProcessManager.ExecuteNextProcess();
+            var finishedProcess = _kernel.ProcessManager.ExecuteNextProcess();
+
+            if (finishedProcess != null)
+            {
+                // CORRIGIDO: Agora chama "Free" em vez de "FreeMemory"
+                _kernel.MemoryManager.Free(finishedProcess.MemoryBlockId);
+                Console.WriteLine($"[Sistema] A Memória do {finishedProcess.Name} foi libertada com sucesso!");
+            }
         }
         public IReadOnlyList<Models.Process> GetReadyQueue()
         {
@@ -49,15 +69,22 @@ namespace MiniOS.Controllers
             return _kernel.MemoryManager.GetUsedMemory();
         }
 
-        public void CreateFile(string name, string content)
+        public void CreateFile(string directory, string name, string content)
         {
-            _kernel.FileSystemManager.CreateFile(name, content);
+            _kernel.FileSystemManager.CreateFile(directory, name, content);
         }
+
         public void ReadFile(string name)
         {
             _kernel.FileSystemManager.ReadFile(name);
         }
-        public System.Collections.Generic.IReadOnlyList<FileEntry> GetAllFiles()
+
+        public void DeleteFile(string name)
+        {
+            _kernel.FileSystemManager.DeleteFile(name);
+        }
+
+        public System.Collections.Generic.IReadOnlyList<MiniOS.Models.FileEntry> GetAllFiles()
         {
             return _kernel.FileSystemManager.GetAllFiles();
         }

@@ -38,7 +38,7 @@ namespace MiniOS.Models.FileSystem
             else
             {
                 // Nos NÓS INTERNOS (índices), se a chave for MAIOR ou IGUAL, 
-                // temos de descer pelo filho da DIREITA! É aqui que estava o bug.
+                // temos de descer pelo filho da DIREITA!
                 while (i < node.Keys.Count && string.Compare(fileName, node.Keys[i]) >= 0)
                     i++;
 
@@ -69,19 +69,21 @@ namespace MiniOS.Models.FileSystem
 
             if (node.IsLeaf)
             {
-                // Encontra a posição correta alfabeticamente
-                while (i >= 0 && string.Compare(file.Name, node.Keys[i]) < 0)
+                // CORRIGIDO: Agora usa o FullPath para comparar!
+                while (i >= 0 && string.Compare(file.FullPath, node.Keys[i]) < 0)
                     i--;
 
-                // Insere a chave (nome) e o valor (ficheiro)
-                node.Keys.Insert(i + 1, file.Name);
+                // CORRIGIDO: Insere a chave usando o FullPath
+                node.Keys.Insert(i + 1, file.FullPath);
                 node.Values.Insert(i + 1, file);
-                Console.WriteLine($"[B+ Tree] Ficheiro '{file.Name}' inserido na folha.");
+
+                // CORRIGIDO: Imprime o FullPath
+                Console.WriteLine($"[B+ Tree] Ficheiro '{file.FullPath}' inserido na folha.");
             }
             else
             {
-                // É um nó interno, temos de descobrir para que filho descer
-                while (i >= 0 && string.Compare(file.Name, node.Keys[i]) < 0)
+                // CORRIGIDO: É um nó interno, usa FullPath para descobrir para que filho descer
+                while (i >= 0 && string.Compare(file.FullPath, node.Keys[i]) < 0)
                     i--;
 
                 i++; // O filho correto está um índice à frente da chave menor
@@ -92,8 +94,8 @@ namespace MiniOS.Models.FileSystem
                     SplitChild(node, i, node.Children[i]);
 
                     // Após a divisão, a chave do meio subiu. Precisamos decidir se descemos 
-                    // para a metade da esquerda ou da direita
-                    if (string.Compare(file.Name, node.Keys[i]) > 0)
+                    // para a metade da esquerda ou da direita. (CORRIGIDO com FullPath)
+                    if (string.Compare(file.FullPath, node.Keys[i]) > 0)
                         i++;
                 }
 
@@ -140,6 +142,7 @@ namespace MiniOS.Models.FileSystem
 
             Console.WriteLine("[B+ Tree] Split realizado com sucesso.");
         }
+
         public List<FileEntry> GetAllFiles()
         {
             var result = new List<FileEntry>();
@@ -159,6 +162,40 @@ namespace MiniOS.Models.FileSystem
             }
 
             return result;
+        }
+
+        public bool Delete(string fileName)
+        {
+            return DeleteInternal(_root, fileName);
+        }
+
+        private bool DeleteInternal(BPlusNode node, string fileName)
+        {
+            int i = 0;
+
+            if (node.IsLeaf)
+            {
+                // Procura a posição exata na folha
+                while (i < node.Keys.Count && string.Compare(fileName, node.Keys[i]) > 0)
+                    i++;
+
+                // Se encontrou, "arranca" a chave e o valor!
+                if (i < node.Keys.Count && node.Keys[i] == fileName)
+                {
+                    node.Keys.RemoveAt(i);
+                    node.Values.RemoveAt(i);
+                    return true; // Sucesso ao apagar
+                }
+                return false; // Ficheiro não existe
+            }
+            else
+            {
+                // Se é nó interno, usa o GPS para descer pelo caminho certo (maior ou igual vai pra direita)
+                while (i < node.Keys.Count && string.Compare(fileName, node.Keys[i]) >= 0)
+                    i++;
+
+                return DeleteInternal(node.Children[i], fileName);
+            }
         }
     }
 }

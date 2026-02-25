@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using MiniOS.Hardware;
 using MiniOS.Models;
 
@@ -13,29 +13,23 @@ namespace MiniOS.Services
             _disk = disk;
         }
 
-        public void CreateFile(string name, string content)
+        // CORRIGIDO: Agora recebe os 3 parâmetros perfeitamente
+        public void CreateFile(string directory, string name, string content)
         {
-            var file = new FileEntry(name, content);
-            _disk.Save(file);
+            _disk.CreateFile(directory, name, content);
         }
 
-        // Nova funcionalidade de leitura
         public void ReadFile(string name)
         {
-            var file = _disk.Read(name);
-
-            if (file != null)
-            {
-                Console.WriteLine($"\n[Sistema de Ficheiros] Ficheiro encontrado!");
-                Console.WriteLine($"Nome: {file.Name}");
-                Console.WriteLine($"Conteúdo: {file.Content}\n");
-            }
-            else
-            {
-                Console.WriteLine($"\n[Sistema de Ficheiros] Erro: O ficheiro '{name}' não existe no disco.\n");
-            }
+            _disk.ReadFile(name);
         }
-        public System.Collections.Generic.IReadOnlyList<FileEntry> GetAllFiles()
+
+        public void DeleteFile(string name)
+        {
+            _disk.DeleteFile(name);
+        }
+
+        public IReadOnlyList<FileEntry> GetAllFiles()
         {
             return _disk.GetAllFiles().AsReadOnly();
         }

@@ -4,12 +4,15 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using MiniOS.Controllers;
+using System.Windows.Threading; 
 
 namespace MiniOS.Views
 {
     public partial class MainWindow : Window
     {
         private readonly SystemController _controller;
+        private readonly DispatcherTimer _cpuClock;
+        private bool _isClockRunning = false;
 
         public MainWindow(SystemController controller)
         {
@@ -24,6 +27,10 @@ namespace MiniOS.Views
             Console.WriteLine("========================================\n");
 
             // Inicializa as interfaces visuais no arranque
+            // Configura o "Coração" do Sistema (1 batida por segundo)
+            _cpuClock = new DispatcherTimer();
+            _cpuClock.Interval = TimeSpan.FromSeconds(10);
+            _cpuClock.Tick += CpuClock_Tick;
             UpdateMemoryUI();
             UpdateFileSystemUI();
         }
@@ -40,6 +47,7 @@ namespace MiniOS.Views
             gridProcesses.ItemsSource = null; // Limpa a referência antiga
             gridProcesses.ItemsSource = _controller.GetReadyQueue(); // Injeta a nova lista
         }
+
 
         private void UpdateMemoryUI()
         {
@@ -78,6 +86,7 @@ namespace MiniOS.Views
             {
                 _controller.CreateProcess(txtProcessName.Text, time);
                 UpdateUI();
+                UpdateMemoryUI();
             }
             else
             {
@@ -89,6 +98,39 @@ namespace MiniOS.Views
         {
             _controller.ExecuteNextProcess();
             UpdateUI();
+            UpdateMemoryUI();
+        }
+        // Este é o método que o relógio chama sozinho a cada 1 segundo!
+        private void CpuClock_Tick(object sender, EventArgs e)
+        {
+            // Só manda executar se houver alguém na fila
+            if (_controller.GetReadyQueueCount() > 0)
+            {
+                _controller.ExecuteNextProcess();
+                UpdateUI();
+                UpdateMemoryUI();
+            }
+        }
+
+        // Este é o botão que liga e desliga o motor
+        private void BtnToggleClock_Click(object sender, RoutedEventArgs e)
+        {
+            _isClockRunning = !_isClockRunning; // Inverte o estado
+
+            if (_isClockRunning)
+            {
+                _cpuClock.Start();
+                btnToggleClock.Content = "Desligar Clock";
+                btnToggleClock.Background = System.Windows.Media.Brushes.Firebrick; // Fica vermelho
+                Console.WriteLine("\n[HARDWARE] Clock da CPU LIGADO! Modo Automático ativado.");
+            }
+            else
+            {
+                _cpuClock.Stop();
+                btnToggleClock.Content = "Ligar Clock (Auto)";
+                btnToggleClock.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFromString("#28A745"); // Volta ao verde
+                Console.WriteLine("\n[HARDWARE] Clock da CPU DESLIGADO.");
+            }
         }
 
         // --- Gestão de Memória ---
@@ -125,32 +167,45 @@ namespace MiniOS.Views
         // --- Sistema de Ficheiros ---
         private void BtnCreateFile_Click(object sender, RoutedEventArgs e)
         {
+            string directory = txtDirectory.Text.Trim();
             string fileName = txtFileName.Text.Trim();
             string content = txtFileContent.Text.Trim();
 
-            // O segurança: bloqueia nomes vazios ou o texto de exemplo
             if (string.IsNullOrWhiteSpace(fileName) || fileName == "Nome do Ficheiro")
             {
-                Console.WriteLine("[Erro UI] Por favor, digite um nome válido para criar o ficheiro.");
-                return; // Pára a execução aqui!
+                Console.WriteLine("[Erro UI] Por favor, digite um nome válido para o ficheiro.");
+                return;
             }
 
-            _controller.CreateFile(fileName, content);
+            // Se o utilizador apagar o texto da pasta, guardamos na raiz ("Root")
+            if (string.IsNullOrWhiteSpace(directory) || directory == "Root") directory = "Root";
+
+            _controller.CreateFile(directory, fileName, content);
             UpdateFileSystemUI();
         }
 
         private void BtnReadFile_Click(object sender, RoutedEventArgs e)
         {
+            string directory = txtDirectory.Text.Trim() == "Root" ? "Root" : txtDirectory.Text.Trim();
             string fileName = txtFileName.Text.Trim();
 
-            // O segurança: bloqueia pesquisas vazias ou com o texto de exemplo
-            if (string.IsNullOrWhiteSpace(fileName) || fileName == "Nome do Ficheiro")
-            {
-                Console.WriteLine("[Erro UI] Por favor, digite o nome do ficheiro que quer ler.");
-                return; // Pára a execução aqui!
-            }
+            if (string.IsNullOrWhiteSpace(fileName) || fileName == "Nome do Ficheiro") return;
 
-            _controller.ReadFile(fileName);
+            // O nosso "GPS" junta a pasta e o nome para procurar a chave certa na Árvore B+!
+            string fullPath = $"{directory}/{fileName}";
+            _controller.ReadFile(fullPath);
+        }
+
+        private void BtnDeleteFile_Click(object sender, RoutedEventArgs e)
+        {
+            string directory = txtDirectory.Text.Trim() == "Root" ? "Root" : txtDirectory.Text.Trim();
+            string fileName = txtFileName.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(fileName) || fileName == "Nome do Ficheiro") return;
+
+            string fullPath = $"{directory}/{fileName}";
+            _controller.DeleteFile(fullPath);
+            UpdateFileSystemUI();
         }
 
         // ==========================================
